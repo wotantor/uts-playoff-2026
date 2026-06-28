@@ -1,9 +1,9 @@
 name: Update Playoff Leaderboard
 
 on:
+  workflow_dispatch: # Позволяет запускать вручную кнопку
   schedule:
-    - cron: '0 9,21 * * *'
-  workflow_dispatch: # Позволяет запускать обновление вручную кнопкой на GitHub
+    - cron: '0 */3 * * *' # Автоматический запуск каждые 3 часа
 
 jobs:
   build:
@@ -16,25 +16,17 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.10'
+        python-version: '3.x'
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install gspread google-auth
 
     - name: Run script
-      env:
-        GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-        GCP_PRIVATE_KEY_ID: ${{ secrets.GCP_PRIVATE_KEY_ID }}
-        GCP_PRIVATE_KEY: ${{ secrets.GCP_PRIVATE_KEY }}
-        GCP_CLIENT_EMAIL: ${{ secrets.GCP_CLIENT_EMAIL }}
       run: python update_leaderboard.py
 
     - name: Commit and Push changes
-      run: |
-        git config --global user.name "github-actions[bot]"
-        git config --global user.email "github-actions[bot]@users.noreply.github.com"
-        git add README.md
-        git diff-index --quiet HEAD || git commit -m "Авто-обновление лидерборда плей-офф"
-        git push
+      uses: stefanzweifel/git-auto-commit-action@v5
+      with:
+        commit_message: "📊 Авто-обновление лидерборда плей-офф"
+        file_pattern: "README.md"
