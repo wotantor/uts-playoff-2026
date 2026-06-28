@@ -8,6 +8,9 @@
 
 ## 📊 Актуальный Лидерборд
 
+START_LEADERBOARD_HERE
+END_LEADERBOARD_HERE
+
 ---
 
 ## 📝 Правила начисления очков
