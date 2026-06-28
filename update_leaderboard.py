@@ -14,11 +14,6 @@ creds_dict = {
 
 def update_github_readme(leaderboard_markdown):
     readme_path = "README.md"
-    
-    if not os.path.exists(readme_path):
-        with open(readme_path, "w", encoding="utf-8") as f:
-            f.write("# 🏆 UTS Play-off 2026\n\n## 📊 Актуальный Лидерборд\n\n")
-
     with open(readme_path, "r", encoding="utf-8") as f:
         content = f.read()
 
@@ -38,13 +33,13 @@ def update_github_readme(leaderboard_markdown):
 
 def main():
     if not creds_dict["private_key"]:
-        print("Ошибка: Секреты GCP не настроены в GitHub Actions.")
+        print("Ошибка: Секреты GCP не настроены.")
         return
 
     creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
     client = gspread.authorize(creds)
     
-    # Ссылка на твою новую таблицу плей-офф UTS play-off
+    # Ссылка на твою таблицу плей-офф
     spreadsheet_id = "1VyPWRRN-_ychz1TsOnSVZyLQy3SX6StpqJsk212HTwA"
     sheet = client.open_by_key(spreadsheet_id).worksheet("Лидерборд")
     
@@ -53,29 +48,40 @@ def main():
         print("Лидерборд пуст.")
         return
 
-    # Строим Markdown-таблицу плей-офф
+    # Строим Markdown-таблицу
     markdown_table = "| 🔝 Место | 👤 Участник | 🎯 Всего очков | 🟢 Точный счёт (3 б.) | 🟡 Исходы (1 б.) |\n"
     markdown_table += "| :---: | :--- | :---: | :---: | :---: |\n"
     
-    for index, row in enumerate(data[1:], start=1):
-        if not row or not row[0]:
+    # Счетчик реальных строк (мест в топе)
+    place_counter = 1
+    
+    for row in data[1:]:
+        # Если строка пустая или имя участника не заполнено — пропускаем
+        if not row or not row[0] or row[0].strip() == "":
             continue
             
-        name = row[0]
+        name = row[0].strip()
+        
+        # Если имя начинается со стандартного "Прогноз: ", красивее его убрать для GitHub
+        if name.startswith("Прогноз:"):
+            name = name.replace("Прогноз:", "").strip()
+            
         total_points = row[1] if len(row) > 1 else "0"
         exact_scores = row[2] if len(row) > 2 else "0"
         outcomes = row[3] if len(row) > 3 else "0"
         
-        if index == 1:
+        # Красивые медали для ТОП-3
+        if place_counter == 1:
             place = "🥇 1"
-        elif index == 2:
+        elif place_counter == 2:
             place = "🥈 2"
-        elif index == 3:
+        elif place_counter == 3:
             place = "🥉 3"
         else:
-            place = f"{index}"
+            place = f"{place_counter}"
             
         markdown_table += f"| {place} | {name} | **{total_points}** | {exact_scores} | {outcomes} |\n"
+        place_counter += 1
 
     update_github_readme(markdown_table)
 
