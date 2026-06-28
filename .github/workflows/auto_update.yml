@@ -2,7 +2,6 @@ name: Update Playoff Leaderboard
 
 on:
   schedule:
-    # Запуск дважды в день (например, в 09:00 и 21:00 UTC). Настрой под себя.
     - cron: '0 9,21 * * *'
   workflow_dispatch: # Позволяет запускать обновление вручную кнопкой на GitHub
 
@@ -12,12 +11,12 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
-        python-python: '3.10'
+        python-version: '3.10'
 
     - name: Install dependencies
       run: |
