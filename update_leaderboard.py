@@ -11,22 +11,24 @@ def update_github_readme(leaderboard_markdown):
         print("Ошибка: Файл README.md не найден!")
         return
 
-    start_marker = ""
-    end_marker = ""
+    start_marker = "<!-- START_LEADERBOARD -->"
+    end_marker = "<!-- END_LEADERBOARD -->"
     
     if start_marker in content and end_marker in content:
-        before = content.split(start_marker)[0]
-        after = content.split(end_marker)[1]
-        new_content = f"{before}{start_marker}\n{leaderboard_markdown}\n{end_marker}{after}"
+        # Ищем индексы начала и конца блока
+        start_idx = content.find(start_marker) + len(start_marker)
+        end_idx = content.find(end_marker)
+        
+        # Собираем файл заново, вставляя таблицу строго между маркерами
+        new_content = content[:start_idx] + "\n" + leaderboard_markdown + "\n" + content[end_idx:]
         
         with open(readme_path, "w", encoding="utf-8") as f:
             f.write(new_content)
         print("README.md успешно обновлен!")
     else:
-        print("Ошибка: Маркеры и не найдены в README.md")
+        print("Ошибка: Маркеры <!-- START_LEADERBOARD --> и <!-- END_LEADERBOARD --> не найдены в README.md")
 
 def main():
-    # ID твоей таблицы и точный gid листа "Лидерборд"
     spreadsheet_id = "1VyPWRRN-_ychz1TsOnSVZyLQy3SX6StpqJsk212HTwA"
     gid = "140688170"
     url = f"https://docs.google.com/spreadsheets/d/{spreadsheet_id}/export?format=csv&gid={gid}"
@@ -46,32 +48,26 @@ def main():
         print("Лидерборд пуст или не удалось прочитать строки.")
         return
 
-    # Заголовки таблицы в Markdown
     markdown_table = "| 🔝 Место | 👤 Участник | 🎯 Всего очков | 🟢 Точный счёт (3 б.) | 🟡 Исходы (1 б.) |\n"
     markdown_table += "| :---: | :--- | :---: | :---: | :---: |\n"
     
     place_counter = 1
     for row in data[1:]:
-        # Базовая проверка на пустую строку
         if not row or not row[0] or row[0].strip() == "":
             continue
             
         name = row[0].strip()
         
-        # Пропускаем технических "Друзей", если у них пока 0 очков
         if "Друг" in name and (len(row) > 1 and (row[1] == "0" or row[1] == "")):
             continue
             
-        # Убираем префикс "Прогноз: ", чтобы оставить чистые фамилии
         if name.startswith("Прогноз:"):
             name = name.replace("Прогноз:", "").strip()
             
-        # Достаем очки (если пусто — ставим 0)
         total_points = row[1] if len(row) > 1 and row[1] != "" else "0"
         exact_scores = row[2] if len(row) > 2 and row[2] != "" else "0"
         outcomes = row[3] if len(row) > 3 and row[3] != "" else "0"
         
-        # Красивые эмодзи для топ-3 мест
         if place_counter == 1:
             place = "🥇 1"
         elif place_counter == 2:
