@@ -1,15 +1,6 @@
-import os
-import gspread
-from google.oauth2.service_account import Credentials
-
-scopes = ["https://www.googleapis.com/auth/spreadsheets"]
-creds_dict = {
-    "type": "service_account",
-    "project_id": os.environ.get("GCP_PROJECT_ID"),
-    "private_key_id": os.environ.get("GCP_PRIVATE_KEY_ID"),
-    "private_key": os.environ.get("GCP_PRIVATE_KEY").replace("\\n", "\n") if os.environ.get("GCP_PRIVATE_KEY") else None,
-    "client_email": os.environ.get("GCP_CLIENT_EMAIL"),
-}
+import urllib.request
+import csv
+import io
 
 def update_github_readme(leaderboard_markdown):
     readme_path = "README.md"
@@ -31,17 +22,22 @@ def update_github_readme(leaderboard_markdown):
         print("Маркеры лидерборда не найдены в README.md")
 
 def main():
-    if not creds_dict["private_key"]:
-        print("Ошибка: Секреты GCP не настроены.")
+    # Ссылка на экспорт листа "Лидерборд" в формате CSV
+    spreadsheet_id = "1VyPWRRN-_ychz1TsOnSVZyLQy3SX6StpqJsk212HTwA"
+    # gid=1406883204 — это ID листа "Лидерборд" из твоей адресной строки
+    url = f"https://docs.google.com/spreadsheets/d/{spreadsheet_id}/export?format=csv&gid=1406883204"
+    
+    try:
+        response = urllib.request.urlopen(url)
+        csv_data = response.read().decode('utf-8')
+    except Exception as e:
+        print(f"Ошибка при скачивании таблицы: {e}")
         return
 
-    creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
-    client = gspread.authorize(creds)
-    
-    spreadsheet_id = "1VyPWRRN-_ychz1TsOnSVZyLQy3SX6StpqJsk212HTwA"
-    sheet = client.open_by_key(spreadsheet_id).worksheet("Лидерборд")
-    
-    data = sheet.get_all_values()
+    f = io.StringIO(csv_data)
+    reader = csv.reader(f)
+    data = list(reader)
+
     if len(data) <= 1:
         print("Лидерборд пуст.")
         return
@@ -51,13 +47,15 @@ def main():
     
     place_counter = 1
     for row in data[1:]:
-        # Если строка пустая или имя не заполнено — пропускаем
         if not row or not row[0] or row[0].strip() == "":
             continue
             
         name = row[0].strip()
         
-        # Убираем "Прогноз: ", чтобы на гитхабе были чистые фамилии
+        # Если имя содержит "Друг" и у него 0 очков — не спамим им в таблице
+        if "Друг" in name and (len(row) > 1 and (row[1] == "0" or row[1] == "")):
+            continue
+            
         if name.startswith("Прогноз:"):
             name = name.replace("Прогноз:", "").strip()
             
@@ -65,7 +63,6 @@ def main():
         exact_scores = row[2] if len(row) > 2 else "0"
         outcomes = row[3] if len(row) > 3 else "0"
         
-        # Назначаем красивые медали для ТОП-3
         if place_counter == 1:
             place = "🥇 1"
         elif place_counter == 2:
