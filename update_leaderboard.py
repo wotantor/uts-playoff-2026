@@ -51,12 +51,13 @@ def main():
     
     place_counter = 1
     for row in data[1:]:
+        # Если строка пустая или имя не заполнено — пропускаем
         if not row or not row[0] or row[0].strip() == "":
             continue
             
         name = row[0].strip()
         
-        # Просто убираем "Прогноз: ", если оно есть
+        # Убираем "Прогноз: ", чтобы на гитхабе были чистые фамилии
         if name.startswith("Прогноз:"):
             name = name.replace("Прогноз:", "").strip()
             
@@ -64,6 +65,7 @@ def main():
         exact_scores = row[2] if len(row) > 2 else "0"
         outcomes = row[3] if len(row) > 3 else "0"
         
+        # Назначаем красивые медали для ТОП-3
         if place_counter == 1:
             place = "🥇 1"
         elif place_counter == 2:
