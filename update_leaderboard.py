@@ -11,22 +11,21 @@ def update_github_readme(leaderboard_markdown):
         print("Ошибка: Файл README.md не найден!")
         return
 
-    start_marker = "<!-- START_LEADERBOARD -->"
-    end_marker = "<!-- END_LEADERBOARD -->"
+    # Текстовые маркеры, которые соответствуют твоему новому README
+    start_marker = "START_LEADERBOARD_HERE"
+    end_marker = "END_LEADERBOARD_HERE"
     
     if start_marker in content and end_marker in content:
-        # Ищем индексы начала и конца блока
         start_idx = content.find(start_marker) + len(start_marker)
         end_idx = content.find(end_marker)
         
-        # Собираем файл заново, вставляя таблицу строго между маркерами
-        new_content = content[:start_idx] + "\n" + leaderboard_markdown + "\n" + content[end_idx:]
+        new_content = content[:start_idx] + "\n\n" + leaderboard_markdown + "\n" + content[end_idx:]
         
         with open(readme_path, "w", encoding="utf-8") as f:
             f.write(new_content)
-        print("README.md успешно обновлен!")
+        print("README.md успешно обновлен локально!")
     else:
-        print("Ошибка: Маркеры <!-- START_LEADERBOARD --> и <!-- END_LEADERBOARD --> не найдены в README.md")
+        print("Ошибка: Текстовые маркеры не найдены в README.md")
 
 def main():
     spreadsheet_id = "1VyPWRRN-_ychz1TsOnSVZyLQy3SX6StpqJsk212HTwA"
@@ -45,7 +44,7 @@ def main():
     data = list(reader)
 
     if len(data) <= 1:
-        print("Лидерборд пуст или не удалось прочитать строки.")
+        print("Лидерборд пуст.")
         return
 
     markdown_table = "| 🔝 Место | 👤 Участник | 🎯 Всего очков | 🟢 Точный счёт (3 б.) | 🟡 Исходы (1 б.) |\n"
