@@ -2,7 +2,6 @@ import os
 import gspread
 from google.oauth2.service_account import Credentials
 
-# Настройка доступов к Google Sheets API
 scopes = ["https://www.googleapis.com/auth/spreadsheets"]
 creds_dict = {
     "type": "service_account",
@@ -39,33 +38,25 @@ def main():
     creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
     client = gspread.authorize(creds)
     
-    # Ссылка на твою таблицу плей-офф
     spreadsheet_id = "1VyPWRRN-_ychz1TsOnSVZyLQy3SX6StpqJsk212HTwA"
     sheet = client.open_by_key(spreadsheet_id).worksheet("Лидерборд")
     
-    # Читаем данные, которые уже посчитаны в Google Sheets
     data = sheet.get_all_values()
     if len(data) <= 1:
         print("Лидерборд пуст.")
         return
 
-    # Строим Markdown-таблицу
     markdown_table = "| 🔝 Место | 👤 Участник | 🎯 Всего очков | 🟢 Точный счёт (3 б.) | 🟡 Исходы (1 б.) |\n"
     markdown_table += "| :---: | :--- | :---: | :---: | :---: |\n"
     
     place_counter = 1
     for row in data[1:]:
-        # Если строка пустая или имя участника не заполнено — пропускаем
         if not row or not row[0] or row[0].strip() == "":
             continue
             
         name = row[0].strip()
         
-        # Если это дефолтный "Друг X" с 0 очков, который идет в конце списка — не выводим его на гитхаб, пока не переименован
-        if "Друг" in name and (len(row) > 1 and (row[1] == "0" or row[1] == "")):
-            continue
-            
-        # Убираем префикс "Прогноз: ", чтобы на гитхабе были чистые фамилии
+        # Просто убираем "Прогноз: ", если оно есть
         if name.startswith("Прогноз:"):
             name = name.replace("Прогноз:", "").strip()
             
@@ -73,7 +64,6 @@ def main():
         exact_scores = row[2] if len(row) > 2 else "0"
         outcomes = row[3] if len(row) > 3 else "0"
         
-        # Назначаем красивые медали для ТОП-3
         if place_counter == 1:
             place = "🥇 1"
         elif place_counter == 2:
